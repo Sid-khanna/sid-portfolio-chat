@@ -4,7 +4,7 @@ export default function Head() {
   return (
     <div className="flex flex-col items-center text-center space-y-3 mb-6">
       <img
-        src="/pfp.jpg"
+        src="/pfp.JPG"
         className="w-24 h-24 rounded-full border-2 border-white"
         alt="Sid's profile"
       />
