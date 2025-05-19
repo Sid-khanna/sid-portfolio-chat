@@ -19,8 +19,11 @@ export default function Chatbox() {
                 ? 'bg-orange-600 text-white rounded-br-none'
                 : 'bg-gray-700 text-white rounded-bl-none'
             }`}
+            {...(msg.role === 'assistant'
+              ? { dangerouslySetInnerHTML: { __html: msg.content } }
+              : {})}
           >
-            {msg.content}
+            {msg.role === 'user' && msg.content}
           </div>
         </div>
       ))}
