@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMessage } from './MessageContext';
+import type { Message } from './MessageContext';
 
 export default function Messagebar() {
   const [input, setInput] = useState('');
@@ -10,8 +11,8 @@ export default function Messagebar() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const newMessages = [...messages, { role: 'user', content: input }];
-    setMessages(newMessages);
+    const newMessage: Message = { role: 'user', content: input };
+    setMessages([...messages, newMessage]);
     setInput('');
 
     const res = await fetch('/api/chat', {
@@ -27,8 +28,8 @@ export default function Messagebar() {
     const reader = res.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let fullText = '';
-    let assistantMessage = { role: 'assistant', content: '' };
-    setMessages(prev => [...prev, assistantMessage]);
+    let assistantMessage: Message = { role: 'assistant', content: '' };
+    setMessages((prev) => [...prev, assistantMessage]);
 
     while (true) {
       const { done, value } = await reader.read();
@@ -36,7 +37,7 @@ export default function Messagebar() {
       const chunk = decoder.decode(value, { stream: true });
       fullText += chunk;
       assistantMessage.content = fullText;
-      setMessages(prev => [...prev.slice(0, -1), assistantMessage]);
+      setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
     }
   };
 
