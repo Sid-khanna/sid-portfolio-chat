@@ -1,12 +1,9 @@
 import { OpenAIStream } from '@/lib/OpenAIStream';
 import { StreamingTextResponse } from '@/lib/StreamingTextResponse';
 import getSystemPrompt from './prompt';
+import { projectDetails } from './projectDetails'; // ✅ same folder
 
-// Import projectDetails
-import { projectDetails } from './projectDetails';
-
-
-//Helper function to check for project query
+// ✅ Helper to look for a project alias in user message
 function getProjectDetailFromMessage(message: string): string | null {
   const msg = message.toLowerCase();
 
@@ -26,29 +23,34 @@ export const runtime = 'edge';
 export async function POST(req: Request) {
   const { message } = await req.json();
 
-  // Check for project match before calling LLM
-  const matchedProject = getProjectDetailFromMessage(message);
-  if (matchedProject) {
-    return new Response(JSON.stringify({
-      role: 'assistant',
-      content: matchedProject,
-    }));
-  }
+  // ✅ Standard system + user message
+  const systemMessage = { role: 'system', content: getSystemPrompt() };
+  const userMessage = { role: 'user', content: message };
 
-  // LLM fallback if not a project match
+  // ✅ If a project is matched, inject that as context BEFORE user input
+  const matchedProject = getProjectDetailFromMessage(message);
+  const projectContext = matchedProject
+    ? {
+        role: 'system',
+        content: `Here is official background context for the user's query:\n\n${matchedProject}`,
+      }
+    : null;
+
+  const messages = projectContext
+    ? [systemMessage, projectContext, userMessage]
+    : [systemMessage, userMessage];
+
+  // ✅ Now send full message stack to OpenRouter
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://localhost:3000', // change this on deploy
+      'HTTP-Referer': 'https://localhost:3000', // update on deploy
     },
     body: JSON.stringify({
       model: 'mistralai/mistral-7b-instruct',
-      messages: [
-        { role: 'system', content: getSystemPrompt() },
-        { role: 'user', content: message },
-      ],
+      messages: messages,
       stream: true,
     }),
   });
