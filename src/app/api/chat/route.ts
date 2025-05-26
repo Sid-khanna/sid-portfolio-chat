@@ -2,11 +2,11 @@ import { OpenAIStream } from '@/lib/OpenAIStream';
 import { StreamingTextResponse } from '@/lib/StreamingTextResponse';
 import getSystemPrompt from './prompt';
 
-// ✅ NEW: Import projectDetails
+// Import projectDetails
 import { projectDetails } from './projectDetails';
 
 
-// ✅ NEW: Helper function to check for project query
+//Helper function to check for project query
 function getProjectDetailFromMessage(message: string): string | null {
   const msg = message.toLowerCase();
 
@@ -26,7 +26,7 @@ export const runtime = 'edge';
 export async function POST(req: Request) {
   const { message } = await req.json();
 
-  // ✅ NEW: Check for project match before calling LLM
+  // Check for project match before calling LLM
   const matchedProject = getProjectDetailFromMessage(message);
   if (matchedProject) {
     return new Response(JSON.stringify({
