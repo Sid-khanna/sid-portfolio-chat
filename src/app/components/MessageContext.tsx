@@ -19,7 +19,13 @@ const MessageContext = createContext<MessageContextType | undefined>(undefined);
 
 // 4. Provider with children typed
 export const MessageProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: "hi, i'm sid — feel free to ask about my background, projects, or portfolio.",
+    },
+  ]);
+
   return (
     <MessageContext.Provider value={{ messages, setMessages }}>
       {children}
