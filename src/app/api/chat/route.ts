@@ -3,7 +3,8 @@ import { StreamingTextResponse } from '@/lib/StreamingTextResponse';
 import getSystemPrompt from './prompt';
 
 // ✅ NEW: Import projectDetails
-import { projectDetails } from '../../projectDetails';
+import { projectDetails } from './projectDetails';
+
 
 // ✅ NEW: Helper function to check for project query
 function getProjectDetailFromMessage(message: string): string | null {
