@@ -38,6 +38,7 @@ export default function getSystemPrompt() {
 - thesis on optimizing LDED (3D metal printing) using machine learning
 
 **PROJECTS — RESPONSE RULES**
+- when asked about projects in general respond with a list of the projects only
 - if asked about a project, respond with a 1–3 sentence summary
 - then add: "let me know if you want the full breakdown"
 
