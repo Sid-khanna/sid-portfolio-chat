@@ -1,4 +1,6 @@
-type ProjectEntry = {
+// my-chatbot-app/src/app/api/chat/projectDetails.ts
+
+export type ProjectEntry = { // <-- ADDED 'export' HERE
   aliases: string[];
   content: string;
 };
@@ -28,10 +30,10 @@ this project highlights how creative writing and AI can amplify each other — n
 
 we trained on Recipe1M+ and scraped extra food data to capture diverse cuisines. the pipeline includes:
 
-- CNNs (ResNet-50, VGG-16) for early benchmarks  
-- RNNs (GRUs, bi-LSTMs) for sequence modeling  
-- Vision Transformers (ViT-B/16) for final image-to-ingredient prediction  
-- LLMs for recipe generation from ingredient lists  
+- CNNs (ResNet-50, VGG-16) for early benchmarks  
+- RNNs (GRUs, bi-LSTMs) for sequence modeling  
+- Vision Transformers (ViT-B/16) for final image-to-ingredient prediction  
+- LLMs for recipe generation from ingredient lists  
 - future work includes joint image–text embeddings for better alignment
 
 this full-stack AI system blends computer vision and language generation to make food smarter and more accessible.`
@@ -41,9 +43,9 @@ this full-stack AI system blends computer vision and language generation to make
     content: `<span class="font-bold text-purple-400">Formula 1 Predictor</span>: i've watched F1 since age 6 — this is a personal ML project that predicts race results using driver stats, team performance, and track history.
 
 features include:
-- keras tuner for hyperparameter tuning  
-- recency bias with decay for momentum  
-- dropout, batchnorm, early stopping, and ReduceLROnPlateau  
+- keras tuner for hyperparameter tuning  
+- recency bias with decay for momentum  
+- dropout, batchnorm, early stopping, and ReduceLROnPlateau  
 - custom loss threshold callback to save compute
 
 the goal was prediction + interpretability — insights on driver form and team strength, not just leaderboard guesses.`
@@ -53,9 +55,9 @@ the goal was prediction + interpretability — insights on driver form and team 
     content: `<span class="font-bold text-purple-400">Blue Sky Solar Racing</span>: as Chief Structural & Manufacturing Engineer, i led the solar car body design and production for the World Solar Challenge (3,000+ km in Australia).
 
 key contributions:
-- carbon/kevlar layups + optimized resin flow  
-- reduced seamlines and cut 17% material waste  
-- managed 3D printing and print tuning  
+- carbon/kevlar layups + optimized resin flow  
+- reduced seamlines and cut 17% material waste  
+- managed 3D printing and print tuning  
 - collaborated with other subteams for structural alignment
 
 it was a real test of lightweight design, rapid production, and team coordination under pressure.`
@@ -65,9 +67,9 @@ it was a real test of lightweight design, rapid production, and team coordinatio
     content: `<span class="font-bold text-purple-400">RSX Rover Team</span>: part of the Robotics for Space Exploration team. focused on field robotics and autonomy for CIRC/URC competitions.
 
 i handled:
-- lidar + imu integration  
-- ROS server configuration  
-- robotic arm arduino code  
+- lidar + imu integration  
+- ROS server configuration  
+- robotic arm arduino code  
 - real-time terrain mapping pipeline (boosted science task by 20%)
 
 tons of debugging, fast iterations, and learning how to build for extreme environments.`
@@ -77,9 +79,9 @@ tons of debugging, fast iterations, and learning how to build for extreme enviro
     content: `<span class="font-bold text-purple-400">EWB Curriculum Reform</span>: i led a UofT-wide sustainability initiative through Engineers Without Borders, focused on integrating sustainability into the Engineering Strategies & Practice (ESP) course.
 
 highlights:
-- scoped reform down to one high-impact course  
-- ran surveys, recruited team, partnered with SEA  
-- co-wrote and presented detailed policy report  
+- scoped reform down to one high-impact course  
+- ran surveys, recruited team, partnered with SEA  
+- co-wrote and presented detailed policy report  
 - stayed on as consultant even after stepping down as lead
 
 this project taught me research synthesis, institutional advocacy, and how to make real change from within.`
