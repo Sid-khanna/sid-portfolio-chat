@@ -9,7 +9,7 @@ const driver = neo4j.driver(
   neo4j.auth.basic(process.env.NEO4J_USERNAME!, process.env.NEO4J_PASSWORD!)
 );
 
-// Helper to look for project alias in old projectDetails fallback
+// Helper to look for project alias in old fallback
 function getProjectDetailFromMessage(message: string): string | null {
   const msg = message.toLowerCase();
   for (const entry of projectDetails) {
@@ -32,7 +32,6 @@ export async function POST(req: Request) {
 
   let projectContext = null;
 
-  // ✅ Try fuzzy match using Neo4j fulltext index
   const session = driver.session();
   try {
     const result = await session.run(
@@ -61,7 +60,7 @@ export async function POST(req: Request) {
     await session.close();
   }
 
-  // ✅ Fallback to legacy projectDetails if no match found
+  // Fallback to projectDetails.js if no fuzzy match
   if (!projectContext) {
     const fallback = getProjectDetailFromMessage(message);
     if (fallback) {
@@ -72,6 +71,44 @@ export async function POST(req: Request) {
     }
   }
 
+  // Fallback to personal graph info if nothing else matched
+  if (
+    !projectContext &&
+    /who\s+are\s+you|tell\s+me\s+about\s+yourself|your\s+background|what\s+do\s+you\s+do/i.test(message)
+  ) {
+    const personalSession = driver.session();
+    try {
+      const result = await personalSession.run(`
+        MATCH (p:Person {id: "Siddharth Khanna"})
+        OPTIONAL MATCH (p)-[:INTERESTED_IN]->(i:Interest)
+        OPTIONAL MATCH (p)-[:STUDIED_AT]->(e:Education)
+        RETURN p.id AS name,
+               COLLECT(DISTINCT i.name) AS interests,
+               COLLECT(DISTINCT e.name) AS education
+      `);
+
+      const row = result.records[0];
+      if (row) {
+        const name = row.get('name');
+        const interests = row.get('interests') || [];
+        const education = row.get('education') || [];
+
+        let bio = `Name: ${name}\n`;
+        if (education.length) bio += `Education: ${education.join(', ')}\n`;
+        if (interests.length) bio += `Interests: ${interests.join(', ')}`;
+
+        projectContext = {
+          role: 'system',
+          content: `Here is personal background info for the user's query:\n\n${bio}`,
+        };
+      }
+    } catch (err) {
+      console.error('Neo4j personal info fallback failed:', err);
+    } finally {
+      await personalSession.close();
+    }
+  }
+
   const messages = projectContext
     ? [systemMessage, projectContext, userMessage]
     : [systemMessage, userMessage];
@@ -79,13 +116,13 @@ export async function POST(req: Request) {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://localhost:3000',
+      'HTTP-Referer': 'https://localhost:3000', // update when deployed
     },
     body: JSON.stringify({
       model: 'mistralai/mistral-7b-instruct',
-      messages: messages,
+      messages,
       stream: true,
     }),
   });
