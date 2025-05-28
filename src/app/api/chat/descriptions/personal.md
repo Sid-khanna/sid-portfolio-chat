@@ -1,0 +1,16 @@
+# About Siddharth Khanna
+
+## Professional Philosophy & Aspirations
+My passion lies in building intelligent systems that solve real-world problems. I'm particularly fascinated by the intersection of **AI**, **robotics**, and **data engineering**, and how these fields can be applied to real-world challenges, including advanced manufacturing. My primary goal is to leverage my skills in **machine learning**, **robotics**, and **software development** to create impactful solutions and contribute to innovative, mission-driven teams. I aspire to take on **leadership roles** where I can guide technical direction and **mentor** junior engineers, fostering an environment of **continuous learning** and **collaboration**. I am driven by the belief that engineering and creativity are complementary strengths that can elevate one another.
+
+## Education
+I completed my **Bachelor of Applied Science (BASc)** at the **University of Toronto**, specializing in **Engineering Science** with a focus on **Robotics and Advanced Manufacturing**. This rigorous program provided me with a strong foundation in both theoretical knowledge and practical application, preparing me for complex engineering challenges.
+
+## Personal Background & Global Perspective
+Born in **Delhi, India**, I was raised across **Southeast Asia**, spending my formative years and attending school in **Malaysia**. This diverse upbringing has instilled in me a global perspective, a strong sense of adaptability, and an appreciation for different cultures, which I believe enriches my approach to teamwork and problem-solving. (Optional: You could briefly mention how this impacts your engineering perspective if you wish).
+
+## Interests & Hobbies
+Outside of my professional pursuits, I'm an avid **hiker** and a true **nature enthusiast**, always eager to explore natural landscapes. My adventures extend beneath the waves as an **advanced scuba diver**, allowing me to connect with the marine world. I'm deeply passionate about **Formula 1 racing**, a sport I've followed intently since the age of six, which often inspires personal **data analysis** projects. I also have a profound love for **storytelling**; I write **fantasy books** and **short stories**, and am currently in the process of **self-publishing a novel** on Amazon. I frequently tinker with **open-source projects**, finding joy in contributing to the wider tech community and continuously learning from diverse codebases.
+
+## Personal Values & Approach
+I believe in **continuous learning** and view every challenge as an opportunity for growth. I value **collaborative environments** where ideas are shared openly and diverse perspectives are embraced. My approach to **problem-solving** is to break complex issues down into manageable components, **experiment iteratively**, and learn from every success and failure. I am **adaptable**, **resilient**, and committed to **ethical considerations in technology development**. I also believe in **empowering others** through **knowledge sharing** and **mentorship**.
