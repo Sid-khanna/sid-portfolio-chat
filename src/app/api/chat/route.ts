@@ -11,7 +11,7 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { RunnableSequence } from "@langchain/core/runnables";
 
 import getSystemPrompt from './prompt';
-import { projectDetails, ProjectEntry } from './projectDetails'; // Ensure ProjectEntry is imported
+import { projectDetails, ProjectEntry } from './projectDetails';
 
 // Helper to look for a project alias in user message for projectDetails.ts content
 function getProjectDetailFromMessage(message: string): string | null {
@@ -41,19 +41,20 @@ const neo4jGraph = new Neo4jGraph({
 // Define the configuration for OpenRouter
 const openRouterConfiguration = {
   apiKey: process.env.OPENROUTER_API_KEY!,
-  baseURL: "https://openrouter.ai/api/v1", // Works if you use OpenAI-like payload
+  baseURL: "https://openrouter.ai/api/v1",
 };
 
 // Initialize your LLM for general chat and query analysis
 const chatModel = new ChatOpenAI({
-  configuration: openRouterConfiguration, // Use the defined configuration
+  configuration: openRouterConfiguration,
   model: "mistralai/mistral-7b-instruct",
   temperature: 0,
 });
 
-// Prompt for the LLM to analyze the user's question and extract entities/intent
+// Prompt for the LLM to analyze the user's *latest* question and extract entities/intent
+// This prompt analyzes only the current turn, as the LLM will then use full history
 const QUERY_ANALYSIS_PROMPT = PromptTemplate.fromTemplate(`
-Analyze the user's question to determine their intent and extract key entities.
+Analyze the user's LATEST question to determine their intent and extract key entities.
 Prioritize extracting details related to Sid Khanna's portfolio (projects, skills, work experience, personal background, education, interests).
 If the question is about a specific project, identify its name and any technologies/skills mentioned.
 If it's about work experience, identify the company or role.
@@ -77,38 +78,38 @@ Output: {{"intent": "get_personal_info", "entities": [{{"name": "hobbies", "type
 Example 5: "Who is Sid Khanna?"
 Output: {{"intent": "get_personal_info", "entities": [{{"name": "Sid Khanna", "type": "Person"}}]}}
 
-User question: {question}
+User's LATEST question: {question}
 Output:
 `);
 
+
 // Main prompt for the LLM to generate the final answer, incorporating graph context
-const FINAL_ANSWER_PROMPT = PromptTemplate.fromTemplate(`
-You are a helpful AI assistant specialized in providing information about Sid Khanna's professional portfolio and personal background.
+// The system prompt from prompt.ts is prepended to this content when passed to LLM
+const FINAL_ANSWER_GENERATION_PROMPT = PromptTemplate.fromTemplate(`
 Use the following context, which includes structured knowledge graph data (entities and relationships)
 and potentially relevant text snippets, to answer the user's question comprehensively and accurately.
 
 Prioritize information from the 'Graph Context' as it provides structured and verified facts.
 If the 'Relevant Text Snippets' provide additional, descriptive details, integrate them.
 If you cannot find relevant information in the context, state that you don't have enough information about that specific query.
-Maintain a professional, knowledgeable, and helpful tone.
 
 --- Graph Context ---
 {graph_context}
 
 --- Relevant Text Snippets ---
 {text_context}
-
---- User Question ---
-{question}
-
-Your answer:
 `);
 
 export async function POST(req: NextRequest) {
   try {
-    const { message: question } = await req.json();
+    // Expect `messages` array from the frontend, where the last message is the current user query
+    const { messages } = await req.json();
+
+    // The current user question is the last message in the array
+    const question = messages[messages.length - 1].content;
 
     // 1. Analyze user query to determine intent and extract entities
+    // Use the *last* user message for analysis
     const analysisChain = RunnableSequence.from([
       QUERY_ANALYSIS_PROMPT,
       chatModel,
@@ -118,7 +119,6 @@ export async function POST(req: NextRequest) {
           return JSON.parse(output);
         } catch (e) {
           console.error("Failed to parse analysis output:", output, e);
-          // Fallback to general query if parsing fails
           return { intent: "general_query", entities: [] };
         }
       }
@@ -215,9 +215,6 @@ export async function POST(req: NextRequest) {
       }
 
       // **Integrate Full-Text Search for Project Descriptions** (complementary to structured queries)
-      // This helps catch descriptive queries that might not yield a direct entity match (fuzzy context).
-      // Make sure you have a full-text index named 'projectDescriptions' on Project nodes,
-      // e.g., CREATE FULLTEXT INDEX projectDescriptions FOR (p:Project) ON (p.name, p.description);
       const fullTextCypherQuery = `
           CALL db.index.fulltext.queryNodes('projectDescriptions', $question)
           YIELD node AS p, score
@@ -250,8 +247,8 @@ export async function POST(req: NextRequest) {
                 OPTIONAL MATCH (s)<-[:APPLIES]-(p:Project)
                 OPTIONAL MATCH (s)<-[:APPLIES]-(r:Role)
                 RETURN s.name AS skillName, s.category AS skillCategory,
-                       COLLECT(DISTINCT p.name) AS projects,
-                       COLLECT(DISTINCT {role: r.name, company: r.companyName}) AS workExperiences
+                        COLLECT(DISTINCT p.name) AS projects,
+                        COLLECT(DISTINCT {role: r.name, company: r.companyName}) AS workExperiences
             `;
         } else {
             // General skill query (list all)
@@ -298,7 +295,7 @@ export async function POST(req: NextRequest) {
             for (const entity of entities) {
                 if (entity.type === "Company" || entity.type === "Role") {
                     const cypherQuery = `
-                        MATCH (p:Person {id: 'Siddharth Khanna'})-[r:WORKED_AT|HAS_ROLE]-(target)
+                        MATCH (p:Person {id: 'Siddharth Khanna'})-[r:WORKED_AT|HAS_ROLE]->(target)
                         WHERE toLower(target.name) CONTAINS toLower("${entity.name}") OR toLower(target.companyName) CONTAINS toLower("${entity.name}")
                         OPTIONAL MATCH (target)-[:APPLIES]->(s:Skill)
                         OPTIONAL MATCH (target)-[:USES]->(t:Technology)
@@ -376,19 +373,68 @@ export async function POST(req: NextRequest) {
         }
     }
     else if (intent === "general_query" || graphContext === "") {
-        // Fallback if no specific intent or context is found
+        // Fallback if no specific intent or context is found after retrieval
+        // This will often catch ambiguous follow-ups like "tell me more"
         graphContext += "I can provide information about Sid Khanna's projects, skills, work experience, education, and interests based on the knowledge graph.\n";
         graphContext += "Please ask a more specific question, e.g., 'What is ParSight?' or 'What are your programming skills?'";
+        // Optionally, for "tell me more" specifically, you could add more default project context here
+        // if no entities were found from the query analysis
+        if (question.toLowerCase().includes("tell me more") && entities.length === 0) {
+            const defaultProjectListQuery = `
+                MATCH (p:Project)
+                RETURN p.name AS projectName, p.description AS projectDescription
+                ORDER BY p.name LIMIT 3
+            `;
+            const defaultProjects = await neo4jGraph.query(defaultProjectListQuery);
+            if (defaultProjects.length > 0) {
+                graphContext += "\nHere are some of Sid's key projects:\n";
+                defaultProjects.forEach((proj: any) => {
+                    graphContext += `- ${proj.projectName}: ${proj.description.substring(0, Math.min(proj.description.length, 100))}...\n`;
+                });
+            }
+        }
     }
 
+    // 3. Prepare messages for the final LLM call
+    // The system prompt is the base instructions for the AI's persona and rules.
+    const systemMessage = { role: 'system', content: getSystemPrompt() };
 
-    // 3. Generate final answer using LLM (OpenRouter via fetch)
-    const messages = [
-      { role: 'system', content: getSystemPrompt() },
-      { role: 'user', content: `--- Graph Context ---\n${graphContext}\n--- Relevant Text Snippets ---\n${textContext}\n--- User Question ---\n${question}` }
-    ];
+    // Let's create a *new* array of messages for the LLM to process.
+    // The previous user messages and assistant messages are passed as is.
+    // The current user message is augmented with the retrieved context.
+    const messagesForLLM = messages.map((msg: any) => ({ ...msg })); // Copy previous messages
 
-    // Direct fetch to OpenRouter for the final response, as ChatOpenAI is already initialized with configuration
+    // Find the last user message and augment its content with the context
+    if (messagesForLLM.length > 0 && messagesForLLM[messagesForLLM.length - 1].role === 'user') {
+      const lastUserMessageIndex = messagesForLLM.length - 1;
+
+      // CORRECTED PART: Use the .format() method of PromptTemplate
+      const formattedPromptContent = await FINAL_ANSWER_GENERATION_PROMPT.format({
+          graph_context: graphContext,
+          text_context: textContext
+      });
+
+      const augmentedContent = formattedPromptContent + "\n\nUser Question: " + question;
+
+      messagesForLLM[lastUserMessageIndex].content = augmentedContent;
+    } else {
+      // Fallback if somehow the last message isn't a user message (shouldn't happen with typical chat UIs)
+      // CORRECTED PART: Use the .format() method of PromptTemplate
+      const formattedPromptContent = await FINAL_ANSWER_GENERATION_PROMPT.format({
+          graph_context: graphContext,
+          text_context: textContext
+      });
+      messagesForLLM.push({
+        role: 'user',
+        content: formattedPromptContent + "\n\nUser Question: " + question,
+      });
+    }
+
+    // Prepend the system prompt at the very beginning of the messages array
+    messagesForLLM.unshift(systemMessage);
+
+
+    // 4. Send the full conversation history (with augmented context) to OpenRouter
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -400,7 +446,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'mistralai/mistral-7b-instruct',
-        messages: messages,
+        messages: messagesForLLM, // Pass the augmented messages array
         stream: true,
       }),
     });
