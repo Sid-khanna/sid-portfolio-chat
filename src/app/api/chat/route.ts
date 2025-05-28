@@ -354,18 +354,24 @@ export async function POST(req: NextRequest) {
         const result = await neo4jGraph.query(cypherQuery);
         if (result.length > 0) {
             const personal = result[0];
+
+            // Safely assign properties, defaulting to empty arrays if undefined/null
+            const education = personal.education || [];
+            const interests = personal.interests || [];
+
             graphContext += `About Sid Khanna:\n`;
             if (personal.philosophy) graphContext += `Professional Philosophy: ${personal.philosophy}\n\n`;
-            if (personal.education && personal.education.length > 0) {
+
+            if (education.length > 0) { // Now safely checking length
                 graphContext += `Education:\n`;
-                personal.education.forEach((edu: any) => {
+                education.forEach((edu: any) => {
                     graphContext += `- ${edu.degree} in ${edu.major} from ${edu.institution}\n`;
                 });
                 graphContext += "\n";
             }
             if (personal.background) graphContext += `Personal Background: ${personal.background}\n\n`;
-            if (personal.interests && personal.interests.length > 0) {
-                graphContext += `Interests & Hobbies: ${personal.interests.join(', ')}\n\n`;
+            if (interests.length > 0) { // Now safely checking length
+                graphContext += `Interests & Hobbies: ${interests.join(', ')}\n\n`;
             }
             if (personal.values) graphContext += `Personal Values & Approach: ${personal.values}\n\n`;
         } else {
