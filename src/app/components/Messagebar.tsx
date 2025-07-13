@@ -12,12 +12,16 @@ export default function Messagebar() {
     if (!input.trim()) return;
 
     const newMessage: Message = { role: 'user', content: input };
-    setMessages([...messages, newMessage]);
+    const updatedMessages = [...messages, newMessage];
+    const messagesForAPI = updatedMessages.slice(1); // remove preset assistant
+
+    setMessages(updatedMessages);
     setInput('');
 
     const res = await fetch('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ message: input }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messagesForAPI }),
     });
 
     if (!res.body) {
@@ -40,6 +44,7 @@ export default function Messagebar() {
       setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
     }
   };
+
 
   return (
     <div className="flex gap-2">
