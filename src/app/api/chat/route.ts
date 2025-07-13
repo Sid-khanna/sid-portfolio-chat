@@ -102,11 +102,14 @@ If you cannot find relevant information in the context, state that you don't hav
 
 export async function POST(req: NextRequest) {
   try {
-    // Expect `messages` array from the frontend, where the last message is the current user query
-    const { messages } = await req.json();
+    const body = await req.json();
+    const messages = Array.isArray(body.messages) ? body.messages : [];
 
-    // The current user question is the last message in the array
-    const question = messages[messages.length - 1].content;
+    if (messages.length === 0) {
+      return NextResponse.json({ error: 'No messages provided.' }, { status: 400 });
+    }
+
+    const question = messages[messages.length - 1].content || "";
 
     // 1. Analyze user query to determine intent and extract entities
     // Use the *last* user message for analysis
