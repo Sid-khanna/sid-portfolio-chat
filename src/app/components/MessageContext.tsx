@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 
 // 1. Define the shape of a single message
 export interface Message {
@@ -12,6 +12,7 @@ export interface Message {
 interface MessageContextType {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  filteredMessagesForAPI: Message[];
 }
 
 // 3. Create context with proper type
@@ -26,14 +27,19 @@ export const MessageProvider = ({ children }: { children: ReactNode }) => {
     },
   ]);
 
+  // 5. Filter out the initial preset assistant message for API usage
+  const filteredMessagesForAPI = useMemo(() => {
+    return messages.slice(1); // skip the first assistant message
+  }, [messages]);
+
   return (
-    <MessageContext.Provider value={{ messages, setMessages }}>
+    <MessageContext.Provider value={{ messages, setMessages, filteredMessagesForAPI }}>
       {children}
     </MessageContext.Provider>
   );
 };
 
-// 5. Hook with error if used outside provider
+// 6. Hook with error if used outside provider
 export const useMessage = () => {
   const context = useContext(MessageContext);
   if (!context) throw new Error('useMessage must be used within a MessageProvider');
