@@ -1,4 +1,4 @@
-// my-chatbot-app/src/app/api/chat/projectDetails.ts
+ // my-chatbot-app/src/app/api/chat/projectDetails.ts
 
 export type ProjectEntry = { // <-- ADDED 'export' HERE
   aliases: string[];
